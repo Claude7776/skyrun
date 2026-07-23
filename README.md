@@ -1,81 +1,123 @@
-# SkyRun Mobile
+# SkyRun 🏃‍♂️
 
-Application mobile (Expo / React Native) de suivi de course à pied : tracking GPS en direct, historique, objectifs, statistiques et fonctionnalités sociales.
+Application moderne de suivi de footing (running tracker) : carte GPS temps réel,
+gestion de parcours, historique, statistiques, objectifs et fonctionnalités
+sociales — inspirée de Strava, Nike Run Club et Garmin Connect.
 
-## Stack
+> **Statut** : toutes les phases prévues sont livrées (voir [Roadmap](#roadmap)).
+> Le client est une **application mobile React Native / Expo** (Android & iOS) ;
+> il n'y a pas de client web.
 
-- [Expo](https://expo.dev) SDK 52 (managed workflow + `expo-dev-client`)
-- [Expo Router](https://docs.expo.dev/router/introduction/) pour la navigation
-- React Native 0.76 / React 18
-- [Zustand](https://github.com/pmndrs/zustand) pour le state global
-- [TanStack Query](https://tanstack.com/query) pour les appels API
-- [@maplibre/maplibre-react-native](https://github.com/maplibre/maplibre-react-native) pour la carte (module natif — nécessite un dev client, incompatible avec Expo Go)
+## Stack technique
 
-## Prérequis
+| Couche          | Technologies                                                                 |
+| ---------------- | ------------------------------------------------------------------------------ |
+| Mobile           | React Native, Expo, Expo Router, TypeScript, TanStack Query, Zustand, Axios     |
+| Cartographie     | MapLibre GL Native + OpenStreetMap, Expo Location (suivi GPS temps réel)              |
+| Mobile — natif   | Expo Location, Expo Secure Store, Reanimated, Gesture Handler, Expo Blur          |
+| Backend          | Node.js, Express (ES modules), architecture MVC + services                         |
+| Base de données  | MongoDB + Mongoose                                                                   |
+| Auth             | JWT (access court) + Refresh Token (rotation, cookie **et** body pour mobile)          |
+| Sécurité         | Helmet, CORS, express-rate-limit, express-mongo-sanitize, bcrypt                        |
+| Documentation    | Swagger / OpenAPI (`/api-docs`)                                                           |
+| Infra            | Docker, Docker Compose (MongoDB + API)                                                     |
 
-- Node.js et npm
-- Un compte [Expo](https://expo.dev) (gratuit) pour EAS Build
-- Un téléphone Android avec le **dev client SkyRun** installé (voir ci-dessous) — l'app utilisant des modules natifs (maplibre), **Expo Go seul ne suffit pas**
+## Démarrage rapide
 
-## Installation
+Prérequis : Docker + Docker Compose, Node.js ≥ 20, un environnement de build
+mobile (Android Studio et/ou Xcode) pour générer le *dev client* — voir
+[`docs/INSTALLATION.md`](docs/INSTALLATION.md) pour le détail.
+
+### 1. Backend (Docker)
 
 ```bash
-npm install
+git clone <repo-url> skyrun && cd skyrun
 cp .env.example .env
+cp backend/.env.example backend/.env
+# -> éditer .env et backend/.env : générer des secrets JWT forts
+#    (ex: openssl rand -hex 64) et un mot de passe MongoDB.
+
+docker compose up --build
 ```
 
-Éditez `.env` et renseignez `EXPO_PUBLIC_API_BASE_URL` avec une URL accessible depuis votre téléphone (IP LAN de votre machine, pas `localhost`) :
+- API : http://localhost:5000/api/v1
+- Documentation API (Swagger) : http://localhost:5000/api-docs
+- Health check : http://localhost:5000/api/v1/health
 
-```
-EXPO_PUBLIC_API_BASE_URL=http://<IP_LAN_DE_VOTRE_MACHINE>:5000/api/v1
-```
-
-## Lancer le projet en développement
+### 2. App mobile (Expo)
 
 ```bash
-npm start
+cd mobile
+cp .env.example .env
+# -> éditer EXPO_PUBLIC_API_BASE_URL avec l'IP locale de votre machine
+#    (ex: http://192.168.1.10:5000/api/v1) ; "localhost" ne fonctionne pas
+#    depuis un téléphone physique ou un émulateur Android.
+npm install
+npx expo prebuild
+npx expo run:android   # ou: npx expo run:ios
 ```
 
-Ouvrez ensuite l'app sur votre téléphone via le dev client (scan du QR code affiché, ou saisie manuelle de `exp://<IP_LAN>:8081`).
+> L'app utilise MapLibre (carte OpenStreetMap) et Expo Location, des modules
+> natifs absents d'**Expo Go** : depuis la Phase 2, il faut un *dev client*
+> généré par `expo prebuild` (voir [`docs/INSTALLATION.md`](docs/INSTALLATION.md)).
+> Une fois le dev client installé sur l'appareil/émulateur, `npx expo start`
+> suffit pour les lancements suivants — seul un changement de module natif
+> demande de relancer `run:android`/`run:ios`.
 
-Si le téléphone ne peut pas joindre le serveur en réseau local (pare-feu, isolation Wi-Fi), utilisez le mode tunnel :
+## Scripts npm
 
-```bash
-npx expo start --tunnel
-```
+| Dossier   | Script            | Description                                     |
+| ---------- | ----------------- | ------------------------------------------------ |
+| `backend`  | `npm run dev`     | Démarre l'API avec rechargement à chaud (nodemon) |
+| `backend`  | `npm start`       | Démarre l'API en mode production                  |
+| `backend`  | `npm test`        | Lance `node --test` — aucun test automatisé écrit pour l'instant, scaffold prêt |
+| `mobile`   | `npm run start`   | Démarre le serveur Metro (dev client déjà installé sur l'appareil) |
+| `mobile`   | `npm run android` | Build + installe le dev client, puis lance sur Android |
+| `mobile`   | `npm run ios`     | Build + installe le dev client, puis lance sur iOS     |
+| `mobile`   | `npm run web`     | Aperçu rapide dans un navigateur (non ciblé en production) |
 
-## Construire le dev client Android (EAS Build)
+## Variables d'environnement
 
-Le projet embarque `expo-dev-client`. Pour builder un APK installable sur téléphone (nécessaire car Expo Go ne supporte que la dernière version de SDK) :
+Voir [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md) pour le détail de chaque variable
+(`.env` racine pour Docker Compose, `backend/.env`, `mobile/.env`).
 
-```bash
-npx eas-cli login
-npx eas-cli build --profile development --platform android
-```
+## Architecture
 
-Une fois le build terminé, installez l'APK depuis le lien fourni par EAS, puis relancez `npm start` et ouvrez l'app depuis le dev client installé.
+Voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) pour le détail de l'organisation
+des dossiers, du flux de requêtes et des choix de conception (auth mobile,
+sécurité, données).
 
-## Structure du projet
+## Documentation API
 
-```
-app/                 Écrans (Expo Router)
-src/
-  api/                Appels API (auth, courses, goals, runs, social...)
-  components/          Composants réutilisables (ui, map)
-  features/            Logique par fonctionnalité (auth, dashboard, tracking...)
-  hooks/                Hooks partagés (ex: useLiveTracking)
-  store/                State global (Zustand)
-  styles/               Thème
-  types/                Types TypeScript partagés
-  utils/                Fonctions utilitaires
-```
+L'API REST (`/api/v1`) est documentée via Swagger/OpenAPI, générée automatiquement à
+partir des annotations JSDoc dans les fichiers de routes — voir
+[`docs/API.md`](docs/API.md) et l'interface interactive `/api-docs`.
 
-## Scripts
+## Fonctionnalités
 
-| Commande | Description |
-|---|---|
-| `npm start` | Démarre le serveur Metro |
-| `npm run android` | Build + lance sur Android (nécessite Android SDK en local) |
-| `npm run ios` | Build + lance sur iOS (nécessite macOS) |
-| `npm run web` | Lance la version web |
-| `npm run lint` | Lint du projet |
+- **Authentification** : inscription, connexion, déconnexion, profil, avatar
+- **Tableau de bord** : distance totale, temps total, nombre de footings, calories,
+  allure moyenne, objectifs atteints
+- **Carte** : position actuelle, tracé du trajet en temps réel, enregistrement GPS
+  automatique (MapLibre / OpenStreetMap)
+- **Parcours** : création, modification, suppression, partage
+- **Historique** : détail de chaque footing (date, distance, temps, allure, carte, calories)
+- **Statistiques** : km/semaine, km/mois, progression, records personnels
+- **Objectifs** : 5 km, 10 km, semi-marathon, marathon, avec suivi de progression
+- **Social** : partage, likes, commentaires sur les parcours
+- **Notifications** : objectif atteint, nouveau record, rappel d'entraînement
+
+## Roadmap
+
+- [x] Phase 0 — Socle & infrastructure backend (Docker, Express, sécurité)
+- [x] Phase 1 — Authentification & profil (backend + app mobile Expo)
+- [x] Phase 2 — Carte & suivi GPS temps réel (MapLibre, Expo Location)
+- [x] Phase 3 — Gestion des parcours
+- [x] Phase 4 — Dashboard, historique, statistiques
+- [x] Phase 5 — Objectifs
+- [x] Phase 6 — Social & notifications
+- [x] Phase 7 — Finitions & documentation complète
+
+## Licence
+
+Projet privé — tous droits réservés.
