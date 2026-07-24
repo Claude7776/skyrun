@@ -55,3 +55,39 @@ export const fontSize = {
   xl: 28,
   '2xl': 40,
 } as const;
+
+/**
+ * Elevation presets (iOS shadow* + Android `elevation`) for the dark theme —
+ * shadows need a visible dark-on-dark tint here rather than the usual black,
+ * since a plain black shadow disappears against `colors.bg`.
+ */
+export const shadows = {
+  card: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  raised: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.32,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  glow: {
+    shadowColor: '#38bdf8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+} as const;
+
+/** Shared animation timings so easing/duration stay consistent app-wide. */
+export const motion = {
+  fast: 120,
+  base: 220,
+  slow: 400,
+} as const;

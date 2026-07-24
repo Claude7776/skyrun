@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
+import * as Location from 'expo-location';
 import { MapView, Camera, UserLocation, ShapeSource, LineLayer, type CameraRef } from '@maplibre/maplibre-react-native';
 import { colors, radius } from '@/styles/theme';
 import type { RoutePoint } from '@/types/run';
@@ -31,6 +32,39 @@ interface RunMapProps {
 
 export function RunMap({ route, followUser = true, fitToRoute = false }: RunMapProps) {
   const cameraRef = useRef<CameraRef>(null);
+  const [hasLocationPermission, setHasLocationPermission] = useState(false);
+
+  // MapLibre's <UserLocation> starts native GPS updates as soon as it mounts —
+  // rendering it before the OS permission is granted throws a native
+  // SecurityException that crashes the app, so gate it on a confirmed grant.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function ensureLocationReady() {
+      let { status } = await Location.getForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        ({ status } = await Location.requestForegroundPermissionsAsync());
+      }
+      if (status !== 'granted') return;
+
+      // Prime the OS location cache with a fresh fix before mounting
+      // <UserLocation> — otherwise it queries a last-known position that
+      // doesn't exist yet and logs "Failed to obtain last location update"
+      // on every render until the first live fix arrives.
+      try {
+        await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      } catch {
+        // Best-effort: UserLocation will still pick up the next live fix.
+      }
+
+      if (!cancelled) setHasLocationPermission(true);
+    }
+
+    ensureLocationReady();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!fitToRoute || route.length < 2) return;
@@ -58,7 +92,7 @@ export function RunMap({ route, followUser = true, fitToRoute = false }: RunMapP
         followZoomLevel={17}
         animationDuration={500}
       />
-      {followUser && <UserLocation visible animated />}
+      {followUser && hasLocationPermission && <UserLocation visible animated />}
       {route.length > 1 && (
         <ShapeSource id="routeSource" shape={routeGeoJSON}>
           <LineLayer

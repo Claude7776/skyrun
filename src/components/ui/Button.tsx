@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type PressableProps } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { colors, gradientBrand, radius, spacing, fontSize } from '@/styles/theme';
+import { colors, gradientBrand, radius, spacing, fontSize, shadows, motion } from '@/styles/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -60,14 +60,18 @@ export function Button({
 
   return (
     <AnimatedPressable
-      style={[animatedStyle, fullWidth && styles.full]}
+      style={[
+        animatedStyle,
+        fullWidth && styles.full,
+        variant === 'primary' && !isDisabled && styles.glow,
+      ]}
       disabled={isDisabled}
       onPressIn={(e) => {
-        scale.value = withTiming(0.97, { duration: 100 });
+        scale.value = withTiming(0.97, { duration: motion.fast });
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        scale.value = withTiming(1, { duration: 100 });
+        scale.value = withTiming(1, { duration: motion.fast });
         onPressOut?.(e);
       }}
       {...props}
@@ -87,6 +91,10 @@ const styles = StyleSheet.create({
   },
   full: {
     width: '100%',
+  },
+  glow: {
+    ...shadows.glow,
+    borderRadius: radius.md,
   },
   disabled: {
     opacity: 0.5,

@@ -19,6 +19,14 @@ export function formatPace(minPerKm: number): string {
   return `${minutes}'${String(seconds).padStart(2, '0')}"/km`;
 }
 
+export function formatSpeed(kmh: number): string {
+  return `${kmh.toFixed(1)} km/h`;
+}
+
+export function formatElevation(meters: number): string {
+  return `${Math.round(meters)} m`;
+}
+
 /** @param isoDate "YYYY-MM-DD" -> "23/06" */
 export function formatShortDate(isoDate: string): string {
   const [, month, day] = isoDate.split('-');

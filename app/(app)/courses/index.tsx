@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { CourseCard } from '@/features/courses/CourseCard';
 import { FeedCourseCard } from '@/features/social/FeedCourseCard';
 import { listCoursesRequest } from '@/api/courses';
 import { getFeedRequest } from '@/api/social';
+import { useFavoritesStore } from '@/store/favoritesStore';
 import { colors, radius, spacing, fontSize } from '@/styles/theme';
 
 type Mode = 'mine' | 'feed';
@@ -17,11 +18,24 @@ type Mode = 'mine' | 'feed';
 export default function CoursesListScreen() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>('mine');
+  const favoriteIds = useFavoritesStore((s) => s.ids);
+  const hydrateFavorites = useFavoritesStore((s) => s.hydrate);
+
+  useEffect(() => {
+    hydrateFavorites();
+  }, [hydrateFavorites]);
 
   const ownQuery = useQuery({ queryKey: ['courses'], queryFn: listCoursesRequest, enabled: mode === 'mine' });
   const feedQuery = useQuery({ queryKey: ['feed'], queryFn: getFeedRequest, enabled: mode === 'feed' });
 
   const isLoading = mode === 'mine' ? ownQuery.isLoading : feedQuery.isLoading;
+
+  const ownCourses = ownQuery.data?.items ?? [];
+  const sortedOwnCourses = [...ownCourses].sort((a, b) => {
+    const aFav = favoriteIds.includes(a._id) ? 1 : 0;
+    const bFav = favoriteIds.includes(b._id) ? 1 : 0;
+    return bFav - aFav;
+  });
 
   return (
     <ScreenContainer style={{ gap: 0 }}>
@@ -32,7 +46,7 @@ export default function CoursesListScreen() {
 
       {mode === 'mine' ? (
         <FlatList
-          data={ownQuery.data?.items ?? []}
+          data={sortedOwnCourses}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => <CourseCard course={item} />}
           contentContainerStyle={styles.listContent}

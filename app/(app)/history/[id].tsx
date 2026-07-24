@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/Input';
 import { Spinner } from '@/components/ui/Spinner';
 import { RunMap } from '@/components/map/RunMap';
 import { getRunRequest, renameRunRequest, deleteRunRequest } from '@/api/runs';
+import { exportRunAsGpx, exportRunAsPdf } from '@/utils/exportRun';
+import { getErrorMessage } from '@/utils/errors';
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/utils/format';
 import { colors, spacing, fontSize, radius } from '@/styles/theme';
 
@@ -49,6 +51,16 @@ export default function RunDetailScreen() {
       { text: 'Supprimer', style: 'destructive', onPress: () => deleteMutation.mutate() },
     ]);
   };
+
+  const gpxMutation = useMutation({
+    mutationFn: () => exportRunAsGpx(run!),
+    onError: (error) => Alert.alert('Export GPX impossible', getErrorMessage(error)),
+  });
+
+  const pdfMutation = useMutation({
+    mutationFn: () => exportRunAsPdf(run!),
+    onError: (error) => Alert.alert('Export PDF impossible', getErrorMessage(error)),
+  });
 
   if (isLoading || !run) {
     return (
@@ -99,6 +111,19 @@ export default function RunDetailScreen() {
         <Stat icon={Flame} label="Calories" value={`${run.calories} kcal`} />
       </View>
 
+      <View style={styles.exportRow}>
+        <View style={styles.exportItem}>
+          <Button variant="glass" fullWidth loading={gpxMutation.isPending} onPress={() => gpxMutation.mutate()}>
+            Exporter GPX
+          </Button>
+        </View>
+        <View style={styles.exportItem}>
+          <Button variant="glass" fullWidth loading={pdfMutation.isPending} onPress={() => pdfMutation.mutate()}>
+            Exporter PDF
+          </Button>
+        </View>
+      </View>
+
       <Button variant="danger" fullWidth loading={deleteMutation.isPending} onPress={confirmDelete}>
         Supprimer ce footing
       </Button>
@@ -124,6 +149,8 @@ const styles = StyleSheet.create({
   date: { color: colors.textFaint, fontSize: fontSize.sm, marginTop: spacing[1] },
   mapWrapper: { height: 240, borderRadius: radius.lg, overflow: 'hidden' },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] },
+  exportRow: { flexDirection: 'row', gap: spacing[3] },
+  exportItem: { flex: 1 },
   statCard: { flexBasis: '30%', flexGrow: 1 },
   statContent: { gap: spacing[1] },
   statValue: { color: colors.text, fontSize: fontSize.md, fontWeight: '800' },

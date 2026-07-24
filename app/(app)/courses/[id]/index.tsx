@@ -9,7 +9,8 @@ import { Spinner } from '@/components/ui/Spinner';
 import { DifficultyBadge } from '@/features/courses/DifficultyBadge';
 import { LikeButton } from '@/features/social/LikeButton';
 import { CommentSection } from '@/features/social/CommentSection';
-import { getCourseRequest, shareCourseRequest, deleteCourseRequest } from '@/api/courses';
+import { getCourseRequest, shareCourseRequest, deleteCourseRequest, createCourseRequest } from '@/api/courses';
+import { getErrorMessage } from '@/utils/errors';
 import { useAuthStore } from '@/store/authStore';
 import { colors, spacing, fontSize } from '@/styles/theme';
 
@@ -37,6 +38,21 @@ export default function CourseDetailScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
       router.back();
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: () =>
+      createCourseRequest({
+        name: `${course!.name} (copie)`,
+        description: course!.description,
+        difficulty: course!.difficulty,
+        distanceKm: course!.distanceKm,
+        estimatedTimeMin: course!.estimatedTimeMin,
+      }),
+    onSuccess: (duplicated) => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      router.replace(`/courses/${duplicated._id}`);
     },
   });
 
@@ -90,20 +106,31 @@ export default function CourseDetailScreen() {
         )}
       </GlassCard>
 
-      {isOwner && (
-        <View style={styles.actions}>
-          <Button variant="glass" onPress={() => router.push(`/courses/${id}/edit`)}>
-            Modifier
-          </Button>
-          {!course.isPublic && (
-            <Button variant="glass" loading={shareMutation.isPending} onPress={() => shareMutation.mutate()}>
-              Partager
+      <View style={styles.actions}>
+        {isOwner && (
+          <>
+            <Button variant="glass" onPress={() => router.push(`/courses/${id}/edit`)}>
+              Modifier
             </Button>
-          )}
+            {!course.isPublic && (
+              <Button variant="glass" loading={shareMutation.isPending} onPress={() => shareMutation.mutate()}>
+                Partager
+              </Button>
+            )}
+          </>
+        )}
+        <Button variant="glass" loading={duplicateMutation.isPending} onPress={() => duplicateMutation.mutate()}>
+          Dupliquer
+        </Button>
+        {isOwner && (
           <Button variant="danger" loading={deleteMutation.isPending} onPress={confirmDelete}>
             Supprimer
           </Button>
-        </View>
+        )}
+      </View>
+
+      {duplicateMutation.isError && (
+        <Text style={styles.errorText}>{getErrorMessage(duplicateMutation.error)}</Text>
       )}
 
       <CommentSection courseId={id} />
@@ -119,5 +146,6 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[4], alignItems: 'center' },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   metaText: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: '600' },
-  actions: { gap: spacing[3] },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] },
+  errorText: { color: colors.danger, fontSize: fontSize.sm },
 });

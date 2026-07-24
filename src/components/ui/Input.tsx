@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
-import { colors, radius, spacing, fontSize } from '@/styles/theme';
+import Animated, { interpolateColor, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { colors, radius, spacing, fontSize, motion } from '@/styles/theme';
+
+const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -9,18 +12,24 @@ interface InputProps extends TextInputProps {
 
 export function Input({ label, error, style, onFocus, onBlur, ...props }: InputProps) {
   const [focused, setFocused] = useState(false);
+  const focusProgress = useSharedValue(0);
+
+  useEffect(() => {
+    focusProgress.value = withTiming(focused ? 1 : 0, { duration: motion.fast });
+  }, [focused, focusProgress]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    borderColor: error
+      ? colors.danger
+      : interpolateColor(focusProgress.value, [0, 1], [colors.border, colors.primary]),
+  }));
 
   return (
     <View style={styles.field}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
-      <TextInput
+      <AnimatedTextInput
         placeholderTextColor={colors.textFaint}
-        style={[
-          styles.input,
-          focused && styles.inputFocused,
-          !!error && styles.inputError,
-          style,
-        ]}
+        style={[styles.input, animatedStyle, style]}
         onFocus={(e) => {
           setFocused(true);
           onFocus?.(e);
@@ -54,12 +63,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[3],
     color: colors.text,
     fontSize: fontSize.md,
-  },
-  inputFocused: {
-    borderColor: colors.primary,
-  },
-  inputError: {
-    borderColor: colors.danger,
   },
   error: {
     color: colors.danger,
