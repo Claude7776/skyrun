@@ -56,7 +56,9 @@ export default function NotificationsScreen() {
       <FlatList
         data={data?.items ?? []}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <NotificationItem notification={item} onPress={handlePress} />}
+        renderItem={({ item, index }) => (
+          <NotificationItem notification={item} onPress={handlePress} delay={Math.min(index * 60, 300)} />
+        )}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: spacing[3] }} />}
         ListEmptyComponent={

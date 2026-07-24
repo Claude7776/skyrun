@@ -1,8 +1,12 @@
+import { useEffect, useRef } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Heart } from 'lucide-react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 import { likeCourseRequest, unlikeCourseRequest } from '@/api/social';
-import { colors, radius, spacing, fontSize } from '@/styles/theme';
+import { colors, radius, spacing, fontSize, motion } from '@/styles/theme';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface LikeButtonProps {
   courseId: string;
@@ -13,6 +17,8 @@ interface LikeButtonProps {
 
 export function LikeButton({ courseId, likesCount, likedByMe, queryKey }: LikeButtonProps) {
   const queryClient = useQueryClient();
+  const scale = useSharedValue(1);
+  const wasLikedRef = useRef(likedByMe);
 
   const mutation = useMutation({
     mutationFn: () => (likedByMe ? unlikeCourseRequest(courseId) : likeCourseRequest(courseId)),
@@ -22,15 +28,38 @@ export function LikeButton({ courseId, likesCount, likedByMe, queryKey }: LikeBu
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
+  // Pop the heart once the like actually lands (after the refetch flips
+  // `likedByMe`), not on tap — the mutation is fire-and-refetch, not optimistic.
+  useEffect(() => {
+    if (likedByMe && !wasLikedRef.current) {
+      scale.value = withSequence(withTiming(1.35, { duration: motion.fast }), withTiming(1, { duration: motion.fast }));
+    }
+    wasLikedRef.current = likedByMe;
+  }, [likedByMe, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={() => mutation.mutate()}
       disabled={mutation.isPending}
       style={[styles.wrapper, likedByMe && styles.wrapperActive]}
+      onPressIn={() => {
+        scale.value = withTiming(0.9, { duration: motion.fast });
+      }}
+      onPressOut={() => {
+        scale.value = withTiming(1, { duration: motion.fast });
+      }}
     >
-      <Heart size={16} color={likedByMe ? colors.danger : colors.textMuted} fill={likedByMe ? colors.danger : 'transparent'} />
+      <Animated.View style={animatedStyle}>
+        <Heart
+          size={16}
+          color={likedByMe ? colors.danger : colors.textMuted}
+          fill={likedByMe ? colors.danger : 'transparent'}
+        />
+      </Animated.View>
       <Text style={[styles.count, likedByMe && styles.countActive]}>{likesCount}</Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

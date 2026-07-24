@@ -1,5 +1,6 @@
 import { StyleSheet, Text } from 'react-native';
 import { useRouter } from 'expo-router';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
@@ -7,7 +8,7 @@ import { AvatarPicker } from '@/features/auth/AvatarPicker';
 import { ProfileForm } from '@/features/auth/ProfileForm';
 import { useAuthStore } from '@/store/authStore';
 import { logoutRequest } from '@/api/auth';
-import { colors, spacing, fontSize } from '@/styles/theme';
+import { colors, spacing, fontSize, motion } from '@/styles/theme';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -26,15 +27,19 @@ export default function ProfileScreen() {
     <ScreenContainer scroll>
       <Text style={styles.title}>Profil</Text>
 
-      <AvatarPicker />
+      <Animated.View entering={FadeIn.duration(motion.base)}>
+        <AvatarPicker />
+      </Animated.View>
 
-      <GlassCard>
+      <GlassCard delay={100}>
         <ProfileForm />
       </GlassCard>
 
-      <Button variant="danger" fullWidth onPress={handleLogout}>
-        Se déconnecter
-      </Button>
+      <Animated.View entering={FadeIn.duration(motion.base).delay(200)}>
+        <Button variant="danger" fullWidth onPress={handleLogout}>
+          Se déconnecter
+        </Button>
+      </Animated.View>
     </ScreenContainer>
   );
 }

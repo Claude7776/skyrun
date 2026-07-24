@@ -83,7 +83,9 @@ export default function GoalsScreen() {
       <FlatList
         data={goals ?? []}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <GoalCard goal={item} onDelete={(id) => deleteMutation.mutate(id)} />}
+        renderItem={({ item, index }) => (
+          <GoalCard goal={item} onDelete={(id) => deleteMutation.mutate(id)} delay={Math.min(index * 60, 300)} />
+        )}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: spacing[3] }} />}
         ListEmptyComponent={

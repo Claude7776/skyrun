@@ -20,14 +20,15 @@ const ICON_COLORS: Record<NotificationType, string> = {
 interface NotificationItemProps {
   notification: AppNotification;
   onPress: (notification: AppNotification) => void;
+  delay?: number;
 }
 
-export function NotificationItem({ notification, onPress }: NotificationItemProps) {
+export function NotificationItem({ notification, onPress, delay }: NotificationItemProps) {
   const Icon = ICONS[notification.type];
 
   return (
     <Pressable onPress={() => onPress(notification)}>
-      <GlassCard contentStyle={styles.content}>
+      <GlassCard contentStyle={styles.content} delay={delay}>
         <View style={[styles.iconWrap, { backgroundColor: `${ICON_COLORS[notification.type]}22` }]}>
           <Icon size={18} color={ICON_COLORS[notification.type]} />
         </View>

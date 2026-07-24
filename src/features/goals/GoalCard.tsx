@@ -9,9 +9,10 @@ import type { Goal } from '@/types/goal';
 interface GoalCardProps {
   goal: Goal;
   onDelete: (id: string) => void;
+  delay?: number;
 }
 
-export function GoalCard({ goal, onDelete }: GoalCardProps) {
+export function GoalCard({ goal, onDelete, delay }: GoalCardProps) {
   const confirmDelete = () => {
     Alert.alert('Supprimer cet objectif ?', undefined, [
       { text: 'Annuler', style: 'cancel' },
@@ -20,7 +21,7 @@ export function GoalCard({ goal, onDelete }: GoalCardProps) {
   };
 
   return (
-    <GlassCard contentStyle={styles.content}>
+    <GlassCard contentStyle={styles.content} delay={delay}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
           {goal.achieved && <CheckCircle2 size={18} color={colors.success} />}
