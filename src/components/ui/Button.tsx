@@ -100,9 +100,13 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   glass: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    // Darker/more opaque than a typical glass surface, plus a card shadow —
+    // this variant is used over the live map (bright OSM tiles), where the
+    // old near-transparent tint was nearly invisible.
+    backgroundColor: 'rgba(10, 14, 20, 0.6)',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.borderStrong,
+    ...shadows.card,
   },
   danger: {
     backgroundColor: 'rgba(248, 113, 113, 0.14)',

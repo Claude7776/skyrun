@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RunMap } from '@/components/map/RunMap';
@@ -17,12 +17,18 @@ import { colors, spacing, fontSize } from '@/styles/theme';
 
 export default function MapScreen() {
   const tracking = useLiveTracking();
+  const queryClient = useQueryClient();
   const [title, setTitle] = useState('Footing');
   const [isCountingDown, setIsCountingDown] = useState(false);
 
   const saveMutation = useMutation({
     mutationFn: createRunRequest,
     onSuccess: () => {
+      // The dashboard/history screens cache their own queries — without this
+      // they keep showing pre-run numbers until something else happens to
+      // refetch them.
+      queryClient.invalidateQueries({ queryKey: ['runs'] });
+      queryClient.invalidateQueries({ queryKey: ['runs', 'stats'] });
       tracking.reset();
       setTitle('Footing');
     },
@@ -41,7 +47,7 @@ export default function MapScreen() {
 
   return (
     <View style={styles.wrapper}>
-      <RunMap route={tracking.points} followUser={tracking.status !== 'stopped'} />
+      <RunMap route={tracking.points} followUser={tracking.status !== 'stopped'} rounded={false} />
 
       {isCountingDown && (
         <CountdownOverlay
@@ -69,6 +75,7 @@ export default function MapScreen() {
             currentSpeedKmh={tracking.currentSpeedKmh}
             elevationGainM={tracking.elevationGainM}
             calories={tracking.caloriesEstimate}
+            status={tracking.status}
           />
         )}
 

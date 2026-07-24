@@ -9,7 +9,13 @@ interface ScreenContainerProps extends ViewProps {
 /** Consistent background + safe-area + padding wrapper used by every screen. */
 export function ScreenContainer({ children, style, scroll = false, ...props }: ScreenContainerProps) {
   const Content = scroll ? ScrollView : View;
-  const contentProps = scroll ? { contentContainerStyle: [styles.content, style] } : { style: [styles.content, style] };
+  // ScrollView's contentContainerStyle must use flexGrow, not flex: `flex: 1`
+  // caps the container at the viewport height and clips/blocks scrolling once
+  // children overflow it (visible as the bottom of tall screens, like the
+  // dashboard, getting cut off instead of scrolling into view).
+  const contentProps = scroll
+    ? { contentContainerStyle: [styles.scrollContent, style] }
+    : { style: [styles.content, style] };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -27,6 +33,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    padding: spacing[5],
+    gap: spacing[5],
+  },
+  scrollContent: {
+    flexGrow: 1,
     padding: spacing[5],
     gap: spacing[5],
   },

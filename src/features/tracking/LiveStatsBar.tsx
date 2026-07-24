@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { Flame, Gauge, Mountain, Route as RouteIcon, Timer, Zap } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { formatDistance, formatDuration, formatElevation, formatPace, formatSpeed } from '@/utils/format';
 import { colors, spacing, fontSize } from '@/styles/theme';
+import type { TrackingStatus } from '@/hooks/useLiveTracking';
 
 interface LiveStatsBarProps {
   distanceKm: number;
@@ -11,6 +14,7 @@ interface LiveStatsBarProps {
   currentSpeedKmh?: number;
   elevationGainM?: number;
   calories?: number;
+  status?: TrackingStatus;
 }
 
 export function LiveStatsBar({
@@ -19,11 +23,18 @@ export function LiveStatsBar({
   currentSpeedKmh = 0,
   elevationGainM = 0,
   calories = 0,
+  status,
 }: LiveStatsBarProps) {
   const paceMinPerKm = distanceKm > 0 ? durationSec / 60 / distanceKm : 0;
 
   return (
     <GlassCard contentStyle={styles.card}>
+      {status && (
+        <View style={styles.statusRow}>
+          <RecordingDot active={status === 'tracking'} />
+          <Text style={styles.statusText}>{status === 'tracking' ? 'Enregistrement' : 'En pause'}</Text>
+        </View>
+      )}
       <View style={styles.row}>
         <Stat icon={RouteIcon} label="Distance" value={formatDistance(distanceKm)} />
         <View style={styles.divider} />
@@ -43,6 +54,25 @@ export function LiveStatsBar({
   );
 }
 
+function RecordingDot({ active }: { active: boolean }) {
+  const pulse = useSharedValue(0);
+
+  useEffect(() => {
+    if (active) {
+      pulse.value = withRepeat(withTiming(1, { duration: 700, easing: Easing.inOut(Easing.ease) }), -1, true);
+    } else {
+      pulse.value = withTiming(0, { duration: 200 });
+    }
+  }, [active, pulse]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: active ? 0.4 + pulse.value * 0.6 : 1,
+    transform: [{ scale: active ? 0.85 + pulse.value * 0.3 : 1 }],
+  }));
+
+  return <Animated.View style={[styles.dot, !active && styles.dotPaused, animatedStyle]} />;
+}
+
 function Stat({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <View style={styles.stat}>
@@ -58,6 +88,27 @@ function Stat({ icon: Icon, label, value }: { icon: LucideIcon; label: string; v
 const styles = StyleSheet.create({
   card: {
     gap: spacing[3],
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.danger,
+  },
+  dotPaused: {
+    backgroundColor: colors.warning,
+  },
+  statusText: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   row: {
     flexDirection: 'row',

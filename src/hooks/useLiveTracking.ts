@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Location from 'expo-location';
+import * as Haptics from 'expo-haptics';
 import { haversineDistanceKm } from '@/utils/geo';
 import type { RoutePoint } from '@/types/run';
 
@@ -49,18 +50,30 @@ export function useLiveTracking() {
   const elapsedBeforePauseRef = useRef(0);
   const lastPointRef = useRef<RoutePoint | null>(null);
   const lastAltitudeRef = useRef<number | null>(null);
+  const distanceRef = useRef(0);
+  const lastKmMilestoneRef = useRef(0);
 
   const addPoint = useCallback((point: RoutePoint, speedFromGps: number | null) => {
     const last = lastPointRef.current;
     if (last) {
       const delta = haversineDistanceKm(last, point);
       if (delta > 0 && delta < MAX_PLAUSIBLE_JUMP_KM) {
-        setDistanceKm((d) => d + delta);
+        const nextDistance = distanceRef.current + delta;
+        distanceRef.current = nextDistance;
+        setDistanceKm(nextDistance);
         if (speedFromGps != null && speedFromGps >= 0) {
           setCurrentSpeedKmh(speedFromGps * 3.6);
         } else {
           const dtHours = (point.t - last.t) / 3_600_000;
           if (dtHours > 0) setCurrentSpeedKmh(delta / dtHours);
+        }
+
+        // Buzz once per completed kilometer — the classic running-app cue
+        // so the runner doesn't have to look at the screen to know they hit one.
+        const milestone = Math.floor(nextDistance);
+        if (milestone > lastKmMilestoneRef.current) {
+          lastKmMilestoneRef.current = milestone;
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         }
       } else if (delta >= MAX_PLAUSIBLE_JUMP_KM) {
         return; // drop the noisy fix entirely, don't record it as a route point
@@ -116,8 +129,11 @@ export function useLiveTracking() {
     elapsedBeforePauseRef.current = 0;
     lastPointRef.current = null;
     lastAltitudeRef.current = null;
+    distanceRef.current = 0;
+    lastKmMilestoneRef.current = 0;
     setStatus('tracking');
     await subscribe();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   }, [subscribe]);
 
   const pause = useCallback(() => {
@@ -125,17 +141,20 @@ export function useLiveTracking() {
     elapsedBeforePauseRef.current = durationSec;
     setCurrentSpeedKmh(0);
     setStatus('paused');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   }, [unsubscribe, durationSec]);
 
   const resume = useCallback(async () => {
     setStatus('tracking');
     await subscribe();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   }, [subscribe]);
 
   const stop = useCallback(() => {
     unsubscribe();
     setCurrentSpeedKmh(0);
     setStatus('stopped');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
   }, [unsubscribe]);
 
   const reset = useCallback(() => {
@@ -149,6 +168,8 @@ export function useLiveTracking() {
     elapsedBeforePauseRef.current = 0;
     lastPointRef.current = null;
     lastAltitudeRef.current = null;
+    distanceRef.current = 0;
+    lastKmMilestoneRef.current = 0;
   }, [unsubscribe]);
 
   // Safety net: stop watching GPS if the screen unmounts mid-run.
