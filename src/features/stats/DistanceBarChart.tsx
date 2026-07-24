@@ -13,10 +13,15 @@ const chartConfig = {
   backgroundGradientFrom: colors.surface,
   backgroundGradientTo: colors.surface,
   decimalPlaces: 1,
-  color: (opacity = 1) => `rgba(56, 189, 248, ${opacity})`,
+  color: (opacity = 1) => `rgba(34, 211, 238, ${opacity})`,
   labelColor: () => colors.textMuted,
   propsForBackgroundLines: { stroke: colors.border },
-  barPercentage: 0.6,
+  barPercentage: 0.55,
+  barRadius: 6,
+  fillShadowGradientFrom: '#0ea5e9',
+  fillShadowGradientTo: '#22d3ee',
+  fillShadowGradientFromOpacity: 1,
+  fillShadowGradientToOpacity: 1,
 };
 
 export function DistanceBarChart({ title, labels, data }: DistanceBarChartProps) {

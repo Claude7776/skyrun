@@ -1,23 +1,30 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type PressableProps } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import type { LucideIcon } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { colors, gradientBrand, radius, spacing, fontSize, shadows, motion } from '@/styles/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type ButtonVariant = 'primary' | 'ghost' | 'glass' | 'danger';
+type ButtonSize = 'md' | 'lg';
 
 interface ButtonProps extends Omit<PressableProps, 'style'> {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
   fullWidth?: boolean;
+  /** Optional leading icon — e.g. the dashboard's hero "Commencer un footing" CTA. */
+  icon?: LucideIcon;
   children: string;
 }
 
 export function Button({
   variant = 'primary',
+  size = 'md',
   loading = false,
   fullWidth = false,
+  icon: Icon,
   children,
   disabled,
   onPressIn,
@@ -27,11 +34,13 @@ export function Button({
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const isDisabled = disabled || loading;
+  const labelColor = variant === 'primary' ? colors.onPrimary : colors.text;
 
   const label = (
-    <Text style={[styles.label, variant === 'primary' ? styles.labelOnPrimary : styles.labelDefault]}>
-      {children}
-    </Text>
+    <View style={styles.labelRow}>
+      {Icon && <Icon size={size === 'lg' ? 20 : 16} color={labelColor} />}
+      <Text style={[styles.label, size === 'lg' && styles.labelLg, { color: labelColor }]}>{children}</Text>
+    </View>
   );
 
   const inner =
@@ -40,7 +49,7 @@ export function Button({
         colors={gradientBrand}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[styles.base, fullWidth && styles.full, isDisabled && styles.disabled]}
+        style={[styles.base, size === 'lg' && styles.baseLg, fullWidth && styles.full, isDisabled && styles.disabled]}
       >
         {loading ? <ActivityIndicator color={colors.onPrimary} /> : label}
       </LinearGradient>
@@ -48,6 +57,7 @@ export function Button({
       <View
         style={[
           styles.base,
+          size === 'lg' && styles.baseLg,
           variant === 'glass' && styles.glass,
           variant === 'danger' && styles.danger,
           fullWidth && styles.full,
@@ -64,6 +74,7 @@ export function Button({
         animatedStyle,
         fullWidth && styles.full,
         variant === 'primary' && !isDisabled && styles.glow,
+        variant === 'primary' && !isDisabled && size === 'lg' && styles.glowLg,
       ]}
       disabled={isDisabled}
       onPressIn={(e) => {
@@ -89,12 +100,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing[5],
   },
+  baseLg: {
+    minHeight: 60,
+    borderRadius: radius.xl,
+    paddingHorizontal: spacing[6],
+  },
   full: {
     width: '100%',
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
   },
   glow: {
     ...shadows.glow,
     borderRadius: radius.md,
+  },
+  glowLg: {
+    borderRadius: radius.xl,
   },
   disabled: {
     opacity: 0.5,
@@ -117,10 +141,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: '700',
   },
-  labelOnPrimary: {
-    color: colors.onPrimary,
-  },
-  labelDefault: {
-    color: colors.text,
+  labelLg: {
+    fontSize: fontSize.md,
   },
 });

@@ -3,7 +3,15 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { Box } from 'lucide-react-native';
-import { MapView, Camera, UserLocation, ShapeSource, LineLayer, type CameraRef } from '@maplibre/maplibre-react-native';
+import {
+  MapView,
+  Camera,
+  UserLocation,
+  ShapeSource,
+  LineLayer,
+  CircleLayer,
+  type CameraRef,
+} from '@maplibre/maplibre-react-native';
 import { colors, radius, spacing, fontSize, shadows } from '@/styles/theme';
 import type { RoutePoint } from '@/types/run';
 
@@ -40,9 +48,23 @@ interface RunMapProps {
   fitToRoute?: boolean;
   /** Rounded corners, for use inside a card. Full-bleed screens (e.g. the live tracking map) should disable this. */
   rounded?: boolean;
+  /** A pre-run planned route (from the routing API), drawn dashed to stand out from the solid recorded-route line. */
+  suggestedRoute?: RoutePoint[];
+  /** Tapped waypoints while planning a route, rendered as small circle markers. */
+  waypoints?: RoutePoint[];
+  /** Forwards MapView's tap coordinate — used while planning a route (adding waypoints). */
+  onMapPress?: (point: RoutePoint) => void;
 }
 
-export function RunMap({ route, followUser = true, fitToRoute = false, rounded = true }: RunMapProps) {
+export function RunMap({
+  route,
+  followUser = true,
+  fitToRoute = false,
+  rounded = true,
+  suggestedRoute,
+  waypoints,
+  onMapPress,
+}: RunMapProps) {
   const cameraRef = useRef<CameraRef>(null);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
   const [is3D, setIs3D] = useState(false);
@@ -97,9 +119,41 @@ export function RunMap({ route, followUser = true, fitToRoute = false, rounded =
     },
   };
 
+  const suggestedRouteGeoJSON = {
+    type: 'Feature' as const,
+    properties: {},
+    geometry: {
+      type: 'LineString' as const,
+      coordinates: (suggestedRoute ?? []).map((p) => [p.lng, p.lat]),
+    },
+  };
+
+  const waypointsGeoJSON = {
+    type: 'FeatureCollection' as const,
+    features: (waypoints ?? []).map((p) => ({
+      type: 'Feature' as const,
+      properties: {},
+      geometry: { type: 'Point' as const, coordinates: [p.lng, p.lat] },
+    })),
+  };
+
+  const handleMapPress = onMapPress
+    ? (feature: GeoJSON.Feature) => {
+        if (feature.geometry.type !== 'Point') return;
+        const [lng, lat] = feature.geometry.coordinates;
+        onMapPress({ lat, lng, t: Date.now() });
+      }
+    : undefined;
+
   return (
     <View style={[styles.wrapper, rounded && styles.mapRounded]}>
-      <MapView style={styles.map} mapStyle={OSM_STYLE} logoEnabled={false} attributionEnabled={false}>
+      <MapView
+        style={styles.map}
+        mapStyle={OSM_STYLE}
+        logoEnabled={false}
+        attributionEnabled={false}
+        onPress={handleMapPress}
+      >
         <Camera
           ref={cameraRef}
           followUserLocation={followUser}
@@ -119,6 +173,33 @@ export function RunMap({ route, followUser = true, fitToRoute = false, rounded =
             <LineLayer
               id="routeLine"
               style={{ lineColor: colors.primary, lineWidth: 4, lineCap: 'round', lineJoin: 'round' }}
+            />
+          </ShapeSource>
+        )}
+        {suggestedRoute && suggestedRoute.length > 1 && (
+          <ShapeSource id="suggestedRouteSource" shape={suggestedRouteGeoJSON}>
+            <LineLayer
+              id="suggestedRouteLine"
+              style={{
+                lineColor: colors.accent,
+                lineWidth: 4,
+                lineCap: 'round',
+                lineJoin: 'round',
+                lineDasharray: [2, 1.5],
+              }}
+            />
+          </ShapeSource>
+        )}
+        {waypoints && waypoints.length > 0 && (
+          <ShapeSource id="waypointsSource" shape={waypointsGeoJSON}>
+            <CircleLayer
+              id="waypointsCircles"
+              style={{
+                circleRadius: 7,
+                circleColor: colors.accent,
+                circleStrokeWidth: 2,
+                circleStrokeColor: colors.bg,
+              }}
             />
           </ShapeSource>
         )}

@@ -16,12 +16,13 @@ const styles = StyleSheet.create({
   badge: {
     alignSelf: 'flex-start',
     borderRadius: radius.pill,
-    borderWidth: 1,
+    borderWidth: 1.5,
     paddingHorizontal: spacing[3],
-    paddingVertical: spacing[1],
+    paddingVertical: spacing[2],
   },
   text: {
     fontSize: fontSize.xs,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.2,
   },
 });

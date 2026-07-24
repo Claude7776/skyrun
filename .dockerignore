@@ -1,0 +1,20 @@
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+**/uploads/avatars/*
+!**/uploads/avatars/.gitkeep
+.git
+.gitignore
+**/*.md
+
+# Not needed to build the backend image (this is the RN app's own project
+# root now that backend/ is co-located under mobile/) — anchored to the
+# context root so this doesn't also exclude backend/src.
+/app
+/src
+/assets
+/.expo
+/android
+/ios

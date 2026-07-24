@@ -1,0 +1,80 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: skyrun-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-skyrun}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-changeme_mongo_password}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-skyrun}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - skyrun-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: skyrun-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGO_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-skyrun}:${MONGO_INITDB_ROOT_PASSWORD:-changeme_mongo_password}@mongo:27017/${MONGO_DB_NAME:-skyrun}?authSource=admin
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8081}
+      # Internal-only: the mobile app never calls OSRM directly, only the backend does.
+      OSRM_URL: http://osrm:5000
+    volumes:
+      - avatars_data:/app/uploads/avatars
+    # Exposed directly on the host: the mobile app (simulator, device on the
+    # same network, or Expo tunnel) talks to the API without an intermediary.
+    ports:
+      - '${BACKEND_PORT:-5000}:5000'
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - skyrun-network
+
+  # Self-hosted routing engine for the "plan a route" feature (foot routing).
+  # Not published to the host — only `backend` talks to it, over the internal
+  # network. Requires a one-time, manual data-prep step before this container
+  # has anything to serve:
+  #
+  #   1. Download an OSM extract for your target region (.osm.pbf), e.g. from
+  #      https://download.geofabrik.de/ — place it at ./osrm-data/region.osm.pbf
+  #   2. Build the dataset from the FOOT profile (not car — a running app must
+  #      not get routed onto motorways/one-ways):
+  #        docker run -t -v "$(pwd)/osrm-data:/data" osrm/osrm-backend \
+  #          osrm-extract -p /opt/foot.lua /data/region.osm.pbf
+  #        docker run -t -v "$(pwd)/osrm-data:/data" osrm/osrm-backend \
+  #          osrm-partition /data/region.osrm
+  #        docker run -t -v "$(pwd)/osrm-data:/data" osrm/osrm-backend \
+  #          osrm-customize /data/region.osrm
+  #   3. Only then does `docker compose up osrm` have a dataset to load.
+  #      Re-run step 2 only when swapping to a different region's extract.
+  osrm:
+    image: osrm/osrm-backend
+    container_name: skyrun-osrm
+    restart: unless-stopped
+    volumes:
+      - ./osrm-data:/data
+    command: osrm-routed --algorithm mld /data/region.osrm
+    networks:
+      - skyrun-network
+
+volumes:
+  mongo_data:
+  avatars_data:
+
+networks:
+  skyrun-network:
+    driver: bridge

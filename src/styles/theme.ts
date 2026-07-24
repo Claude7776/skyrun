@@ -27,7 +27,7 @@ export const colors = {
 } as const;
 
 /** Used with expo-linear-gradient for the primary button / brand accents. */
-export const gradientBrand = ['#38bdf8', '#818cf8', '#a78bfa'] as const;
+export const gradientBrand = ['#0ea5e9', '#38bdf8', '#22d3ee'] as const;
 
 export const spacing = {
   1: 4,
@@ -43,7 +43,8 @@ export const spacing = {
 export const radius = {
   sm: 8,
   md: 14,
-  lg: 20,
+  lg: 24,
+  xl: 28,
   pill: 999,
 } as const;
 
@@ -64,9 +65,9 @@ export const fontSize = {
 export const shadows = {
   card: {
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
     elevation: 4,
   },
   raised: {
@@ -77,7 +78,7 @@ export const shadows = {
     elevation: 8,
   },
   glow: {
-    shadowColor: '#38bdf8',
+    shadowColor: '#22d3ee',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 14,

@@ -5,9 +5,9 @@ import { Camera, UserRound } from 'lucide-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { uploadAvatarRequest } from '@/api/auth';
 import { resolveAssetUrl } from '@/utils/url';
-import { colors, radius } from '@/styles/theme';
+import { colors, radius, shadows } from '@/styles/theme';
 
-const AVATAR_SIZE = 96;
+const AVATAR_SIZE = 120;
 
 export function AvatarPicker() {
   const user = useAuthStore((s) => s.user);
@@ -43,17 +43,22 @@ export function AvatarPicker() {
 
   return (
     <Pressable onPress={handlePick} style={styles.wrapper} disabled={mutation.isPending}>
-      <View style={styles.avatar}>
-        {avatarUrl ? (
-          <Image source={{ uri: avatarUrl }} style={styles.image} />
-        ) : (
-          <UserRound size={40} color={colors.textMuted} />
-        )}
-        {mutation.isPending && (
-          <View style={styles.overlay}>
-            <ActivityIndicator color={colors.text} />
-          </View>
-        )}
+      {/* Shadow lives on this outer, non-clipping wrapper — iOS clips a
+          view's own shadow when overflow:hidden is set, which the inner
+          view needs for the circular crop (same split GlassCard uses). */}
+      <View style={styles.shadowWrapper}>
+        <View style={styles.avatar}>
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={styles.image} />
+          ) : (
+            <UserRound size={40} color={colors.textMuted} />
+          )}
+          {mutation.isPending && (
+            <View style={styles.overlay}>
+              <ActivityIndicator color={colors.text} />
+            </View>
+          )}
+        </View>
       </View>
       <View style={styles.badge}>
         <Camera size={16} color={colors.onPrimary} />
@@ -64,13 +69,17 @@ export function AvatarPicker() {
 
 const styles = StyleSheet.create({
   wrapper: { alignSelf: 'center' },
+  shadowWrapper: {
+    borderRadius: AVATAR_SIZE / 2,
+    ...shadows.raised,
+  },
   avatar: {
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: AVATAR_SIZE / 2,
     backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 2,
+    borderColor: colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

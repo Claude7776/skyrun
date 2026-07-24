@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Flame, Gauge, ListChecks, Route as RouteIcon, Target, Timer } from 'lucide-react-native';
+import { Flame, Gauge, ListChecks, Play, Route as RouteIcon, Target, Timer } from 'lucide-react-native';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { Button } from '@/components/ui/Button';
 import { StatCard } from '@/features/dashboard/StatCard';
@@ -72,7 +72,7 @@ export default function DashboardScreen() {
         <NotificationBell />
       </View>
 
-      <Button variant="primary" fullWidth onPress={() => router.push('/map')}>
+      <Button variant="primary" size="lg" icon={Play} fullWidth onPress={() => router.push('/map')}>
         Commencer un footing
       </Button>
 
@@ -88,18 +88,50 @@ export default function DashboardScreen() {
             icon={RouteIcon}
             label="Distance totale"
             value={formatDistance(summary.totalDistanceKm)}
+            numericValue={summary.totalDistanceKm}
+            formatter={formatDistance}
             delay={0}
           />
-          <StatCard icon={Timer} label="Temps total" value={formatDuration(summary.totalDurationSec)} delay={60} />
-          <StatCard icon={ListChecks} label="Footings" value={String(summary.totalRuns)} delay={120} />
-          <StatCard icon={Flame} label="Calories" value={`${summary.totalCalories} kcal`} delay={180} />
+          <StatCard
+            icon={Timer}
+            label="Temps total"
+            value={formatDuration(summary.totalDurationSec)}
+            numericValue={summary.totalDurationSec}
+            formatter={formatDuration}
+            delay={60}
+          />
+          <StatCard
+            icon={ListChecks}
+            label="Footings"
+            value={String(summary.totalRuns)}
+            numericValue={summary.totalRuns}
+            formatter={(n) => String(Math.round(n))}
+            delay={120}
+          />
+          <StatCard
+            icon={Flame}
+            label="Calories"
+            value={`${summary.totalCalories} kcal`}
+            numericValue={summary.totalCalories}
+            formatter={(n) => `${Math.round(n)} kcal`}
+            delay={180}
+          />
           <StatCard icon={Gauge} label="Allure moyenne" value={formatPace(summary.avgPaceMinPerKm)} delay={240} />
-          <StatCard icon={Timer} label="Temps moyen" value={formatDuration(summary.avgDurationSec)} delay={300} />
+          <StatCard
+            icon={Timer}
+            label="Temps moyen"
+            value={formatDuration(summary.avgDurationSec)}
+            numericValue={summary.avgDurationSec}
+            formatter={formatDuration}
+            delay={300}
+          />
           {goalsData && (
             <StatCard
               icon={Target}
               label="Objectifs atteints"
               value={`${achievedGoalsCount}/${goalsData.length}`}
+              numericValue={achievedGoalsCount}
+              formatter={(n) => `${Math.round(n)}/${goalsData.length}`}
               delay={360}
             />
           )}
@@ -152,8 +184,8 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  greeting: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800' },
-  subtitle: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing[1] },
+  greeting: { color: colors.text, fontSize: fontSize['2xl'], fontWeight: '800', letterSpacing: -0.5 },
+  subtitle: { color: colors.textMuted, fontSize: fontSize.sm, marginTop: spacing[2] },
   centered: { alignItems: 'center', paddingVertical: spacing[6] },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] },
   section: { gap: spacing[3] },

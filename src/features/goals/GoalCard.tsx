@@ -1,7 +1,7 @@
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
-import { CheckCircle2, Trash2 } from 'lucide-react-native';
+import { Trash2, Trophy } from 'lucide-react-native';
 import { GlassCard } from '@/components/ui/GlassCard';
-import { ProgressBar } from '@/components/ui/ProgressBar';
+import { CircularProgress } from '@/components/ui/CircularProgress';
 import { goalLabel } from './constants';
 import { colors, spacing, fontSize } from '@/styles/theme';
 import type { Goal } from '@/types/goal';
@@ -24,7 +24,7 @@ export function GoalCard({ goal, onDelete, delay }: GoalCardProps) {
     <GlassCard contentStyle={styles.content} delay={delay}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          {goal.achieved && <CheckCircle2 size={18} color={colors.success} />}
+          {goal.achieved && <Trophy size={18} color={colors.warning} />}
           <Text style={styles.title}>{goalLabel(goal.type, goal.targetDistanceKm)}</Text>
         </View>
         <Pressable onPress={confirmDelete} hitSlop={8}>
@@ -32,21 +32,28 @@ export function GoalCard({ goal, onDelete, delay }: GoalCardProps) {
         </Pressable>
       </View>
 
-      <ProgressBar percent={goal.progressPercent} color={goal.achieved ? colors.success : colors.primary} />
-
-      <Text style={styles.progressText}>
-        {goal.achieved
-          ? `Atteint — meilleur footing : ${goal.bestDistanceKm.toFixed(1)} km`
-          : `${goal.bestDistanceKm.toFixed(1)} / ${goal.targetDistanceKm} km (${goal.progressPercent}%)`}
-      </Text>
+      <View style={styles.progressRow}>
+        <CircularProgress
+          percent={goal.progressPercent}
+          size={56}
+          strokeWidth={6}
+          color={goal.achieved ? colors.success : colors.primary}
+        />
+        <Text style={styles.progressText}>
+          {goal.achieved
+            ? `Atteint — meilleur footing : ${goal.bestDistanceKm.toFixed(1)} km`
+            : `${goal.bestDistanceKm.toFixed(1)} / ${goal.targetDistanceKm} km (${goal.progressPercent}%)`}
+        </Text>
+      </View>
     </GlassCard>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { gap: spacing[3] },
+  content: { gap: spacing[4] },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   title: { color: colors.text, fontSize: fontSize.md, fontWeight: '800' },
-  progressText: { color: colors.textMuted, fontSize: fontSize.xs },
+  progressRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[4] },
+  progressText: { color: colors.textMuted, fontSize: fontSize.xs, flex: 1, flexWrap: 'wrap' },
 });
