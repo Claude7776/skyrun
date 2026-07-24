@@ -10,10 +10,29 @@ import {
   ShapeSource,
   LineLayer,
   CircleLayer,
+  SymbolLayer,
   type CameraRef,
 } from '@maplibre/maplibre-react-native';
 import { colors, radius, spacing, fontSize, shadows } from '@/styles/theme';
+import { haversineDistanceKm } from '@/utils/geo';
 import type { RoutePoint } from '@/types/run';
+
+/** One marker per completed kilometer along `route`, numbered in order — matches the checkpoint pins on a live-tracking map. */
+function computeKmMarkers(route: RoutePoint[]) {
+  const markers: { lat: number; lng: number; label: string }[] = [];
+  if (route.length < 2) return markers;
+
+  let cumulativeKm = 0;
+  let nextThreshold = 1;
+  for (let i = 1; i < route.length; i++) {
+    cumulativeKm += haversineDistanceKm(route[i - 1], route[i]);
+    if (cumulativeKm >= nextThreshold) {
+      markers.push({ lat: route[i].lat, lng: route[i].lng, label: String(nextThreshold) });
+      nextThreshold += 1;
+    }
+  }
+  return markers;
+}
 
 // Camera tilt for the "3D" view toggle. The tile source is flat raster
 // imagery (no building-height data), so this gives a Strava/Nike-Run-style
@@ -37,6 +56,10 @@ const OSM_STYLE = {
       attribution: '© OpenStreetMap contributors',
     },
   },
+  // Text rendering (the km-checkpoint SymbolLayer) needs a glyph source
+  // independent of the raster tiles above — MapLibre's public demo glyph
+  // server, same dev-only caveat as the OSM tiles themselves.
+  glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
 
@@ -54,6 +77,8 @@ interface RunMapProps {
   waypoints?: RoutePoint[];
   /** Forwards MapView's tap coordinate — used while planning a route (adding waypoints). */
   onMapPress?: (point: RoutePoint) => void;
+  /** Numbered checkpoint markers every completed km along `route` — opt-in since it's noisy on small preview maps. */
+  showCheckpoints?: boolean;
 }
 
 export function RunMap({
@@ -64,6 +89,7 @@ export function RunMap({
   suggestedRoute,
   waypoints,
   onMapPress,
+  showCheckpoints = false,
 }: RunMapProps) {
   const cameraRef = useRef<CameraRef>(null);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
@@ -137,6 +163,16 @@ export function RunMap({
     })),
   };
 
+  const kmMarkers = showCheckpoints ? computeKmMarkers(route) : [];
+  const kmMarkersGeoJSON = {
+    type: 'FeatureCollection' as const,
+    features: kmMarkers.map((m) => ({
+      type: 'Feature' as const,
+      properties: { label: m.label },
+      geometry: { type: 'Point' as const, coordinates: [m.lng, m.lat] },
+    })),
+  };
+
   const handleMapPress = onMapPress
     ? (feature: GeoJSON.Feature) => {
         if (feature.geometry.type !== 'Point') return;
@@ -199,6 +235,30 @@ export function RunMap({
                 circleColor: colors.accent,
                 circleStrokeWidth: 2,
                 circleStrokeColor: colors.bg,
+              }}
+            />
+          </ShapeSource>
+        )}
+        {kmMarkers.length > 0 && (
+          <ShapeSource id="kmMarkersSource" shape={kmMarkersGeoJSON}>
+            <CircleLayer
+              id="kmMarkersCircles"
+              style={{
+                circleRadius: 11,
+                circleColor: colors.primary,
+                circleStrokeWidth: 2,
+                circleStrokeColor: colors.bg,
+              }}
+            />
+            <SymbolLayer
+              id="kmMarkersLabels"
+              style={{
+                textField: ['get', 'label'],
+                textSize: 11,
+                textColor: colors.onPrimary,
+                textFont: ['Open Sans Bold'],
+                textAllowOverlap: true,
+                textIgnorePlacement: true,
               }}
             />
           </ShapeSource>

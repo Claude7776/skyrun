@@ -31,8 +31,11 @@ export function LiveStatsBar({
     <GlassCard contentStyle={styles.card}>
       {status && (
         <View style={styles.statusRow}>
-          <RecordingDot active={status === 'tracking'} />
-          <Text style={styles.statusText}>{status === 'tracking' ? 'Enregistrement' : 'En pause'}</Text>
+          <View style={styles.statusLeft}>
+            <RecordingDot active={status === 'tracking'} />
+            <Text style={styles.statusText}>{status === 'tracking' ? 'Enregistrement' : 'En pause'}</Text>
+          </View>
+          <GpsIndicator active={status === 'tracking'} />
         </View>
       )}
       <View style={styles.row}>
@@ -73,6 +76,26 @@ function RecordingDot({ active }: { active: boolean }) {
   return <Animated.View style={[styles.dot, !active && styles.dotPaused, animatedStyle]} />;
 }
 
+// Bar count reflects whether the GPS watch is actively receiving fixes
+// (tracking) vs paused — not a real signal-strength reading (useLiveTracking
+// doesn't expose fix accuracy), so this is an honest on/off signal rendered
+// as bars rather than a fabricated precision indicator.
+function GpsIndicator({ active }: { active: boolean }) {
+  return (
+    <View style={styles.gpsRow}>
+      <Text style={styles.gpsLabel}>GPS</Text>
+      <View style={styles.gpsBars}>
+        {[6, 9, 12, 15].map((height, i) => (
+          <View
+            key={i}
+            style={[styles.gpsBar, { height }, active ? styles.gpsBarActive : styles.gpsBarInactive]}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function Stat({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
     <View style={styles.stat}>
@@ -92,7 +115,38 @@ const styles = StyleSheet.create({
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  statusLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing[2],
+  },
+  gpsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: spacing[1],
+  },
+  gpsLabel: {
+    color: colors.textFaint,
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    marginRight: spacing[1],
+  },
+  gpsBars: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  gpsBar: {
+    width: 3,
+    borderRadius: 1.5,
+  },
+  gpsBarActive: {
+    backgroundColor: colors.primary,
+  },
+  gpsBarInactive: {
+    backgroundColor: colors.border,
   },
   dot: {
     width: 8,

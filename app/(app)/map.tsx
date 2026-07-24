@@ -1,22 +1,26 @@
-import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { AlertCircle } from 'lucide-react-native';
+import { AlertCircle, Check, Frown, Laugh, Meh, Smile, type LucideIcon } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { RunMap } from '@/components/map/RunMap';
 import { LiveStatsBar } from '@/features/tracking/LiveStatsBar';
 import { CountdownOverlay } from '@/features/tracking/CountdownOverlay';
 import { Button } from '@/components/ui/Button';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Input } from '@/components/ui/Input';
+import { ConfettiBurst } from '@/components/ui/ConfettiBurst';
 import { useLiveTracking } from '@/hooks/useLiveTracking';
 import { createRunRequest } from '@/api/runs';
 import { planRouteRequest } from '@/api/routing';
 import { formatDistance, formatDuration, formatElevation, formatPace } from '@/utils/format';
 import { getErrorMessage } from '@/utils/errors';
-import { colors, spacing, fontSize } from '@/styles/theme';
+import { colors, spacing, fontSize, radius } from '@/styles/theme';
 import type { RoutePoint } from '@/types/run';
 import type { PlannedRoute } from '@/types/route';
+
+const MOODS: LucideIcon[] = [Frown, Meh, Smile, Laugh];
 
 export default function MapScreen() {
   const tracking = useLiveTracking();
@@ -27,6 +31,9 @@ export default function MapScreen() {
   const [isPlanning, setIsPlanning] = useState(false);
   const [waypoints, setWaypoints] = useState<RoutePoint[]>([]);
   const [plannedRoute, setPlannedRoute] = useState<PlannedRoute | null>(null);
+  // Purely a feel-good touch on the completion screen — there's no mood
+  // field on the Run model yet, so this is local-only and never sent to the API.
+  const [mood, setMood] = useState<number | null>(null);
 
   const saveMutation = useMutation({
     mutationFn: createRunRequest,
@@ -38,6 +45,7 @@ export default function MapScreen() {
       queryClient.invalidateQueries({ queryKey: ['runs', 'stats'] });
       tracking.reset();
       setPlannedRoute(null);
+      setMood(null);
       setTitle('Footing');
     },
   });
@@ -83,6 +91,7 @@ export default function MapScreen() {
         onMapPress={isPlanning ? (point) => setWaypoints((prev) => [...prev, point]) : undefined}
         waypoints={isPlanning ? waypoints : undefined}
         suggestedRoute={plannedRoute?.points}
+        showCheckpoints={!isPlanning}
       />
 
       {isCountingDown && (
@@ -161,20 +170,44 @@ export default function MapScreen() {
         )}
 
         {tracking.status === 'stopped' && (
-          <GlassCard style={styles.summaryCardOuter} contentStyle={styles.summaryCard}>
-            <Text style={styles.summaryTitle}>Footing terminé</Text>
-            <View style={styles.summaryRow}>
-              <SummaryStat label="Distance" value={formatDistance(tracking.distanceKm)} />
-              <SummaryStat label="Temps" value={formatDuration(tracking.durationSec)} />
-              <SummaryStat label="Allure" value={formatPace(paceMinPerKm)} />
-              <SummaryStat label="Calories" value={`${tracking.caloriesEstimate} kcal`} />
-              <SummaryStat label="Dénivelé" value={formatElevation(tracking.elevationGainM)} />
-            </View>
-            <Input label="Nom du footing" value={title} onChangeText={setTitle} />
-            {saveMutation.isError && (
-              <Text style={styles.errorText}>{getErrorMessage(saveMutation.error)}</Text>
-            )}
-          </GlassCard>
+          <View style={styles.summaryCardOuter}>
+            <ConfettiBurst />
+            <GlassCard contentStyle={styles.summaryCard}>
+              <View style={styles.celebration}>
+                <CheckmarkBadge />
+                <Text style={styles.congratsTitle}>Félicitations !</Text>
+                <Text style={styles.congratsSubtitle}>Tu as terminé ton footing 🎉</Text>
+              </View>
+
+              <View style={styles.summaryRow}>
+                <SummaryStat label="Distance" value={formatDistance(tracking.distanceKm)} />
+                <SummaryStat label="Temps" value={formatDuration(tracking.durationSec)} />
+                <SummaryStat label="Allure" value={formatPace(paceMinPerKm)} />
+                <SummaryStat label="Calories" value={`${tracking.caloriesEstimate} kcal`} />
+                <SummaryStat label="Dénivelé" value={formatElevation(tracking.elevationGainM)} />
+              </View>
+
+              <View style={styles.moodSection}>
+                <Text style={styles.moodLabel}>Comment te sens-tu ?</Text>
+                <View style={styles.moodRow}>
+                  {MOODS.map((MoodIcon, i) => (
+                    <Pressable
+                      key={i}
+                      onPress={() => setMood(i)}
+                      style={[styles.moodButton, mood === i && styles.moodButtonActive]}
+                    >
+                      <MoodIcon size={20} color={mood === i ? colors.primary : colors.textMuted} />
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+
+              <Input label="Nom du footing" value={title} onChangeText={setTitle} />
+              {saveMutation.isError && (
+                <Text style={styles.errorText}>{getErrorMessage(saveMutation.error)}</Text>
+              )}
+            </GlassCard>
+          </View>
         )}
 
         <View style={styles.controls}>
@@ -229,6 +262,7 @@ export default function MapScreen() {
                   onPress={() => {
                     tracking.reset();
                     setPlannedRoute(null);
+                    setMood(null);
                   }}
                 >
                   Ignorer
@@ -244,6 +278,22 @@ export default function MapScreen() {
         </View>
       </SafeAreaView>
     </View>
+  );
+}
+
+function CheckmarkBadge() {
+  const scale = useSharedValue(0);
+
+  useEffect(() => {
+    scale.value = withSpring(1, { damping: 8, stiffness: 120 });
+  }, [scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  return (
+    <Animated.View style={[styles.checkmarkBadge, animatedStyle]}>
+      <Check size={32} color={colors.onPrimary} strokeWidth={3} />
+    </Animated.View>
   );
 }
 
@@ -266,10 +316,39 @@ const styles = StyleSheet.create({
   errorCard: { marginBottom: spacing[3] },
   errorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing[2] },
   errorText: { color: colors.danger, fontSize: fontSize.sm, flexShrink: 1 },
-  summaryCardOuter: { marginTop: 'auto', marginBottom: spacing[3] },
-  summaryCard: { gap: spacing[4] },
+  summaryCardOuter: { position: 'relative', marginTop: 'auto', marginBottom: spacing[3] },
+  summaryCard: { gap: spacing[5] },
   summaryTitle: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800', letterSpacing: -0.3 },
   summaryRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-around', rowGap: spacing[3] },
+  celebration: { alignItems: 'center', gap: spacing[2] },
+  checkmarkBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.pill,
+    backgroundColor: colors.success,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing[1],
+  },
+  congratsTitle: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800', letterSpacing: -0.3 },
+  congratsSubtitle: { color: colors.textMuted, fontSize: fontSize.sm },
+  moodSection: { gap: spacing[2], alignItems: 'center' },
+  moodLabel: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: '600' },
+  moodRow: { flexDirection: 'row', gap: spacing[3] },
+  moodButton: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
+  },
+  moodButtonActive: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(56, 189, 248, 0.14)',
+  },
   planCard: { marginBottom: spacing[3] },
   planCardContent: { gap: spacing[4] },
   planHint: { color: colors.textMuted, fontSize: fontSize.sm },
