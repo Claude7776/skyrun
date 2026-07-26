@@ -4,14 +4,13 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Compass, Plus } from 'lucide-react-native';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { CourseCard } from '@/features/courses/CourseCard';
 import { FeedCourseCard } from '@/features/social/FeedCourseCard';
 import { listCoursesRequest } from '@/api/courses';
 import { getFeedRequest } from '@/api/social';
 import { useFavoritesStore } from '@/store/favoritesStore';
-import { colors, radius, spacing, fontSize } from '@/styles/theme';
+import { colors, radius, spacing, fontSize, shadows } from '@/styles/theme';
 
 type Mode = 'mine' | 'feed';
 
@@ -51,13 +50,6 @@ export default function CoursesListScreen() {
           renderItem={({ item }) => <CourseCard course={item} />}
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={() => <View style={{ height: spacing[3] }} />}
-          ListHeaderComponent={
-            <View style={{ marginBottom: spacing[4] }}>
-              <Button variant="glass" fullWidth onPress={() => router.push('/courses/new')}>
-                + Créer un parcours
-              </Button>
-            </View>
-          }
           ListEmptyComponent={
             isLoading ? (
               <View style={styles.centered}>
@@ -92,6 +84,12 @@ export default function CoursesListScreen() {
           }
         />
       )}
+
+      {mode === 'mine' && (
+        <Pressable style={styles.fab} onPress={() => router.push('/courses/new')} hitSlop={4}>
+          <Plus size={26} color={colors.onPrimary} />
+        </Pressable>
+      )}
     </ScreenContainer>
   );
 }
@@ -105,6 +103,18 @@ function Tab({ label, active, onPress }: { label: string; active: boolean; onPre
 }
 
 const styles = StyleSheet.create({
+  fab: {
+    position: 'absolute',
+    right: spacing[1],
+    bottom: spacing[5],
+    width: 52,
+    height: 52,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.glow,
+  },
   tabs: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceAlt,

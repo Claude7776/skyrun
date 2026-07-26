@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
   },
   moodButtonActive: {
     borderColor: colors.primary,
-    backgroundColor: 'rgba(56, 189, 248, 0.14)',
+    backgroundColor: 'rgba(31, 206, 143, 0.14)',
   },
   planCard: { marginBottom: spacing[3] },
   planCardContent: { gap: spacing[4] },

@@ -1,11 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Clock, Route as RouteIcon, Share2, Star } from 'lucide-react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { DifficultyBadge } from './DifficultyBadge';
+import { DIFFICULTY_COLORS } from './difficulty';
 import { useFavoritesStore } from '@/store/favoritesStore';
-import { colors, spacing, fontSize, motion } from '@/styles/theme';
+import { colors, radius, spacing, fontSize, motion } from '@/styles/theme';
 import type { Course } from '@/types/course';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -28,38 +30,49 @@ export function CourseCard({ course }: { course: Course }) {
         scale.value = withTiming(1, { duration: motion.fast });
       }}
     >
-      <GlassCard contentStyle={styles.card}>
-        <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={1}>
-            {course.name}
-          </Text>
-          <View style={styles.headerIcons}>
-            {course.isPublic && <Share2 size={16} color={colors.primary} />}
-            <Pressable onPress={() => toggleFavorite(course._id)} hitSlop={8}>
-              <Star
-                size={18}
-                color={isFavorite ? colors.warning : colors.textFaint}
-                fill={isFavorite ? colors.warning : 'transparent'}
-              />
-            </Pressable>
-          </View>
-        </View>
+      <GlassCard style={styles.cardOuter} contentStyle={styles.card}>
+        <LinearGradient
+          colors={[`${DIFFICULTY_COLORS[course.difficulty]}33`, colors.surfaceAlt]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.thumbnail}
+        >
+          <RouteIcon size={26} color={DIFFICULTY_COLORS[course.difficulty]} />
+        </LinearGradient>
 
-        {course.description ? (
-          <Text style={styles.description} numberOfLines={2}>
-            {course.description}
-          </Text>
-        ) : null}
-
-        <View style={styles.footer}>
-          <DifficultyBadge difficulty={course.difficulty} />
-          <View style={styles.metaRow}>
-            <RouteIcon size={14} color={colors.textMuted} />
-            <Text style={styles.metaText}>{course.distanceKm} km</Text>
+        <View style={styles.body}>
+          <View style={styles.header}>
+            <Text style={styles.name} numberOfLines={1}>
+              {course.name}
+            </Text>
+            <View style={styles.headerIcons}>
+              {course.isPublic && <Share2 size={16} color={colors.primary} />}
+              <Pressable onPress={() => toggleFavorite(course._id)} hitSlop={8}>
+                <Star
+                  size={18}
+                  color={isFavorite ? colors.warning : colors.textFaint}
+                  fill={isFavorite ? colors.warning : 'transparent'}
+                />
+              </Pressable>
+            </View>
           </View>
-          <View style={styles.metaRow}>
-            <Clock size={14} color={colors.textMuted} />
-            <Text style={styles.metaText}>{course.estimatedTimeMin} min</Text>
+
+          {course.description ? (
+            <Text style={styles.description} numberOfLines={2}>
+              {course.description}
+            </Text>
+          ) : null}
+
+          <View style={styles.footer}>
+            <DifficultyBadge difficulty={course.difficulty} />
+            <View style={styles.metaRow}>
+              <RouteIcon size={14} color={colors.textMuted} />
+              <Text style={styles.metaText}>{course.distanceKm} km</Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Clock size={14} color={colors.textMuted} />
+              <Text style={styles.metaText}>{course.estimatedTimeMin} min</Text>
+            </View>
           </View>
         </View>
       </GlassCard>
@@ -68,7 +81,14 @@ export function CourseCard({ course }: { course: Course }) {
 }
 
 const styles = StyleSheet.create({
-  card: { gap: spacing[3] },
+  cardOuter: { overflow: 'hidden' },
+  card: { padding: 0 },
+  thumbnail: {
+    height: 84,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  body: { gap: spacing[3], padding: spacing[5] },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headerIcons: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
   name: { color: colors.text, fontSize: fontSize.lg, fontWeight: '800', flexShrink: 1, letterSpacing: -0.3 },

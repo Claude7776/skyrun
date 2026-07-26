@@ -4,30 +4,30 @@
  * RN has no CSS variables.
  */
 export const colors = {
-  bg: '#0a0e14',
-  bgElevated: '#0f141b',
-  surface: '#141a22',
-  surfaceAlt: '#1a212b',
+  bg: '#080a09',
+  bgElevated: '#0c0f0e',
+  surface: '#12100f',
+  surfaceAlt: '#181c1a',
   border: 'rgba(255, 255, 255, 0.1)',
   borderStrong: 'rgba(255, 255, 255, 0.18)',
 
-  text: '#f4f7fa',
-  textMuted: '#9aa7b8',
-  textFaint: '#667181',
+  text: '#f4f7f5',
+  textMuted: '#9aa8a3',
+  textFaint: '#667772',
 
-  primary: '#38bdf8',
-  primaryDark: '#0ea5e9',
-  accent: '#a78bfa',
+  primary: '#1fce8f',
+  primaryDark: '#16a673',
+  accent: '#38d9a9',
 
   success: '#34d399',
   warning: '#fbbf24',
   danger: '#f87171',
 
-  onPrimary: '#06121d',
+  onPrimary: '#04140d',
 } as const;
 
 /** Used with expo-linear-gradient for the primary button / brand accents. */
-export const gradientBrand = ['#0ea5e9', '#38bdf8', '#22d3ee'] as const;
+export const gradientBrand = ['#16a673', '#1fce8f', '#34d399'] as const;
 
 export const spacing = {
   1: 4,
@@ -78,7 +78,7 @@ export const shadows = {
     elevation: 8,
   },
   glow: {
-    shadowColor: '#22d3ee',
+    shadowColor: '#1fce8f',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 14,

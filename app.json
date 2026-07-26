@@ -6,7 +6,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0a0e14",
+    "backgroundColor": "#080a09",
     "icon": "./assets/icon.png",
     "newArchEnabled": true,
     "assetBundlePatterns": [
@@ -29,7 +29,7 @@
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0a0e14"
+        "backgroundColor": "#080a09"
       }
     },
     "plugins": [
@@ -57,7 +57,7 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#0a0e14"
+          "backgroundColor": "#080a09"
         }
       ]
     ],

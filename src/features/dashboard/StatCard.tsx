@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(56, 189, 248, 0.14)',
+    backgroundColor: 'rgba(31, 206, 143, 0.14)',
   },
   value: { color: colors.text, fontSize: fontSize.lg, fontWeight: '800' },
   label: { color: colors.textMuted, fontSize: fontSize.xs },

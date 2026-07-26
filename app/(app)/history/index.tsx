@@ -1,15 +1,12 @@
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarX, ListChecks, Route as RouteIcon, Timer } from 'lucide-react-native';
+import { CalendarX } from 'lucide-react-native';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
 import { Input } from '@/components/ui/Input';
 import { Spinner } from '@/components/ui/Spinner';
-import { StatCard } from '@/features/dashboard/StatCard';
-import { DistanceBarChart } from '@/features/stats/DistanceBarChart';
 import { RunCard } from '@/features/history/RunCard';
 import { listRunsRequest } from '@/api/runs';
-import { formatDistance, formatDuration, formatShortDate } from '@/utils/format';
 import { colors, radius, spacing, fontSize } from '@/styles/theme';
 import type { Run } from '@/types/run';
 
@@ -52,12 +49,6 @@ export default function HistoryListScreen() {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [data, search, period]);
 
-  const totalDistanceKm = filteredRuns.reduce((sum, run) => sum + run.distanceKm, 0);
-  const totalDurationSec = filteredRuns.reduce((sum, run) => sum + run.durationSec, 0);
-
-  // Oldest-to-newest, capped, so the trend chart reads left-to-right in time order.
-  const chartRuns = [...filteredRuns].reverse().slice(-15);
-
   return (
     <ScreenContainer style={{ gap: 0 }}>
       <FlatList
@@ -88,24 +79,6 @@ export default function HistoryListScreen() {
                 </Pressable>
               ))}
             </View>
-
-            {filteredRuns.length > 0 && (
-              <>
-                <View style={styles.statsGrid}>
-                  <StatCard icon={RouteIcon} label="Distance" value={formatDistance(totalDistanceKm)} />
-                  <StatCard icon={Timer} label="Temps" value={formatDuration(totalDurationSec)} />
-                  <StatCard icon={ListChecks} label="Footings" value={String(filteredRuns.length)} />
-                </View>
-
-                {chartRuns.length > 1 && (
-                  <DistanceBarChart
-                    title="Distance par footing"
-                    labels={chartRuns.map((run) => formatShortDate(run.date.slice(0, 10)))}
-                    data={chartRuns.map((run) => run.distanceKm)}
-                  />
-                )}
-              </>
-            )}
           </View>
         }
         ListEmptyComponent={
@@ -143,7 +116,6 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   filterChipText: { color: colors.textMuted, fontSize: fontSize.xs, fontWeight: '700' },
   filterChipTextActive: { color: colors.onPrimary },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] },
   listContent: { flexGrow: 1 },
   centered: { alignItems: 'center', justifyContent: 'center', paddingVertical: spacing[7], gap: spacing[3] },
   emptyText: { color: colors.textFaint, fontSize: fontSize.sm, textAlign: 'center' },

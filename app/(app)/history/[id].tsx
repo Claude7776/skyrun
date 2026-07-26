@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Flame, Gauge, Pencil, Route as RouteIcon, Timer, Zap } from 'lucide-react-native';
 import { ScreenContainer } from '@/components/ui/ScreenContainer';
-import { GlassCard } from '@/components/ui/GlassCard';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Spinner } from '@/components/ui/Spinner';
@@ -103,12 +102,12 @@ export default function RunDetailScreen() {
         <RunMap route={run.route} followUser={false} fitToRoute />
       </View>
 
-      <View style={styles.statsGrid}>
-        <Stat icon={RouteIcon} label="Distance" value={formatDistance(run.distanceKm)} />
-        <Stat icon={Timer} label="Temps" value={formatDuration(run.durationSec)} />
-        <Stat icon={Gauge} label="Allure" value={formatPace(run.avgPaceMinPerKm)} />
-        <Stat icon={Zap} label="Vitesse" value={`${run.avgSpeedKmh} km/h`} />
-        <Stat icon={Flame} label="Calories" value={`${run.calories} kcal`} />
+      <View style={styles.statsList}>
+        <StatRow icon={RouteIcon} label="Distance" value={formatDistance(run.distanceKm)} />
+        <StatRow icon={Timer} label="Temps" value={formatDuration(run.durationSec)} />
+        <StatRow icon={Gauge} label="Allure moyenne" value={formatPace(run.avgPaceMinPerKm)} />
+        <StatRow icon={Zap} label="Vitesse moyenne" value={`${run.avgSpeedKmh} km/h`} />
+        <StatRow icon={Flame} label="Calories" value={`${run.calories} kcal`} last />
       </View>
 
       <View style={styles.exportRow}>
@@ -131,13 +130,25 @@ export default function RunDetailScreen() {
   );
 }
 
-function Stat({ icon: Icon, label, value }: { icon: typeof RouteIcon; label: string; value: string }) {
+function StatRow({
+  icon: Icon,
+  label,
+  value,
+  last,
+}: {
+  icon: typeof RouteIcon;
+  label: string;
+  value: string;
+  last?: boolean;
+}) {
   return (
-    <GlassCard style={styles.statCard} contentStyle={styles.statContent}>
-      <Icon size={16} color={colors.primary} />
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </GlassCard>
+    <View style={[styles.statRow, !last && styles.statRowDivider]}>
+      <View style={styles.statRowLeft}>
+        <Icon size={16} color={colors.primary} />
+        <Text style={styles.statRowLabel}>{label}</Text>
+      </View>
+      <Text style={styles.statRowValue}>{value}</Text>
+    </View>
   );
 }
 
@@ -148,11 +159,23 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: fontSize.xl, fontWeight: '800' },
   date: { color: colors.textFaint, fontSize: fontSize.sm, marginTop: spacing[1] },
   mapWrapper: { height: 240, borderRadius: radius.lg, overflow: 'hidden' },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing[3] },
   exportRow: { flexDirection: 'row', gap: spacing[3] },
   exportItem: { flex: 1 },
-  statCard: { flexBasis: '30%', flexGrow: 1 },
-  statContent: { gap: spacing[1] },
-  statValue: { color: colors.text, fontSize: fontSize.md, fontWeight: '800' },
-  statLabel: { color: colors.textMuted, fontSize: fontSize.xs },
+  statsList: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing[5],
+  },
+  statRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing[4],
+  },
+  statRowDivider: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  statRowLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing[3] },
+  statRowLabel: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: '600' },
+  statRowValue: { color: colors.text, fontSize: fontSize.sm, fontWeight: '800' },
 });

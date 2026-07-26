@@ -12,7 +12,7 @@ export default function HistoryStackLayout() {
         contentStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Historique' }} />
+      <Stack.Screen name="index" options={{ title: 'Activités' }} />
       <Stack.Screen name="[id]" options={{ title: 'Détail du footing' }} />
     </Stack>
   );

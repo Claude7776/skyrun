@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   },
   chipSelected: {
     borderColor: colors.primary,
-    backgroundColor: 'rgba(56, 189, 248, 0.14)',
+    backgroundColor: 'rgba(31, 206, 143, 0.14)',
   },
   chipText: { color: colors.textMuted, fontSize: fontSize.sm, fontWeight: '700' },
   chipTextSelected: { color: colors.primary },

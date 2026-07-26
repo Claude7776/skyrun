@@ -36,7 +36,7 @@ function buildRunReportHtml(run: Run): string {
       td { padding: 12px 0; border-bottom: 1px solid #e2e8f0; font-size: 16px; }
       td.label { color: #667181; }
       td.value { text-align: right; font-weight: 700; }
-      .brand { color: #0ea5e9; font-weight: 800; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px; }
+      .brand { color: #16a673; font-weight: 800; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 16px; }
     </style>
   </head>
   <body>

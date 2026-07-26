@@ -1,12 +1,12 @@
 import { Platform } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
-import { History, LayoutDashboard, MapPin, Route, Target, UserRound } from 'lucide-react-native';
+import { BarChart3, History, House, Route, UserRound } from 'lucide-react-native';
 import { useAuthStore } from '@/store/authStore';
 import { colors, fontSize, shadows } from '@/styles/theme';
 
-// Extended with Social (Phase 6) — likely folded into an existing screen
-// (e.g. Courses) rather than a 7th tab. Statistiques is merged into the
-// Dashboard tab rather than given its own, to limit the bar's growth.
+// Five-tab bar matching the SkyRun mockup (Accueil/Parcours/Activités/Stats/Profil).
+// "Carte" (live tracking) and "Objectifs" (now "Défis") are still real routes —
+// just reached by push (from the home CTA / profile menu) instead of a tab button.
 export default function AppGroupLayout() {
   const status = useAuthStore((s) => s.status);
 
@@ -34,18 +34,9 @@ export default function AppGroupLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tableau de bord',
+          title: 'Accueil',
           tabBarIcon: ({ color, size, focused }) => (
-            <LayoutDashboard color={color} size={size} strokeWidth={focused ? 2.4 : 2} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: 'Carte',
-          tabBarIcon: ({ color, size, focused }) => (
-            <MapPin color={color} size={size} strokeWidth={focused ? 2.4 : 2} />
+            <House color={color} size={size} strokeWidth={focused ? 2.4 : 2} />
           ),
         }}
       />
@@ -61,18 +52,18 @@ export default function AppGroupLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: 'Historique',
+          title: 'Activités',
           tabBarIcon: ({ color, size, focused }) => (
             <History color={color} size={size} strokeWidth={focused ? 2.4 : 2} />
           ),
         }}
       />
       <Tabs.Screen
-        name="goals"
+        name="stats"
         options={{
-          title: 'Objectifs',
+          title: 'Stats',
           tabBarIcon: ({ color, size, focused }) => (
-            <Target color={color} size={size} strokeWidth={focused ? 2.4 : 2} />
+            <BarChart3 color={color} size={size} strokeWidth={focused ? 2.4 : 2} />
           ),
         }}
       />
@@ -85,6 +76,11 @@ export default function AppGroupLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="map" options={{ href: null }} />
+      <Tabs.Screen name="goals" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null }} />
+      <Tabs.Screen name="about" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }
